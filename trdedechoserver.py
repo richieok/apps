@@ -40,13 +40,42 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         #response = bytes("{}".format(data), 'ascii')
         #self.request.sendall(response)
 
+class TestSockHdlr(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.request.setblocking(0)
+        s_list = [self.request]
+        data_in = None
+        inbuff = bytearray()
+        try:
+            while True:
+                rlist, wlist, elist = select.select(s_list, s_list, s_list, 1)
+                for s in rlist:
+                    r = None
+                    r = s.recv(1024)
+                    if r == b"":
+                        print("received empty string")
+                    else:
+                        inbuff.extend(r)
+                        data_in = str(inbuff, "utf-8")
+                        print("Received: {}".format(data_in))
+                for s in wlist:
+                    if data_in:
+                        s.shutdown(socket.SHUT_WR)
+                        #s.send(b"Rodeo")
+                        break
+                for s in elist:
+                    print("Error on thread {}".format(threading.current_thread().name))
+                    break
+        except Exception as e:
+            print("{}. {}".format(type(e), e))
+
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 9998
     try:
-        with ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler) as server:
+        with ThreadedTCPServer((HOST, PORT), TestSockHdlr) as server:
             server.serve_forever()
     except KeyboardInterrupt:
         pass
