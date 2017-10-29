@@ -66,6 +66,7 @@ class TestSockHdlr(socketserver.BaseRequestHandler):
                 if s in wlist:
                     if data_in:
                         s.shutdown(socket.SHUT_WR)
+                        data_in = None
                         print("WR shutdown")
                         #s.send(b"Rodeo")
                         #break
