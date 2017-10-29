@@ -7,8 +7,8 @@ if __name__ == "__main__":
         s = socket.socket()
         s.connect(("localhost", 9998))
         s.sendall(bytes("Message!", "utf-8"))
-        s.shutdown(socket.SHUT_WR)
         time.sleep(5)
+        s.shutdown(socket.SHUT_WR)
         d = s.recv(1024)
         if d == b"":
             print("Received b''")

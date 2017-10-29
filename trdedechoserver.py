@@ -42,28 +42,34 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
 class TestSockHdlr(socketserver.BaseRequestHandler):
     def handle(self):
-        self.request.setblocking(0)
+        s = self.request
         s_list = [self.request]
+        s.setblocking(0)
         data_in = None
         inbuff = bytearray()
         try:
             while True:
                 rlist, wlist, elist = select.select(s_list, s_list, s_list, 1)
-                for s in rlist:
+                #using 'if' and not 'for' since the list contains only one socket
+                if s in rlist:
                     r = None
                     r = s.recv(1024)
                     if r == b"":
                         print("received empty string")
+                        s.shutdown(socket.SHUT_RD)
+                        print("RD shutdown")
+                        break
                     else:
                         inbuff.extend(r)
                         data_in = str(inbuff, "utf-8")
                         print("Received: {}".format(data_in))
-                for s in wlist:
+                if s in wlist:
                     if data_in:
                         s.shutdown(socket.SHUT_WR)
+                        print("WR shutdown")
                         #s.send(b"Rodeo")
-                        break
-                for s in elist:
+                        #break
+                if s in elist:
                     print("Error on thread {}".format(threading.current_thread().name))
                     break
         except Exception as e:
